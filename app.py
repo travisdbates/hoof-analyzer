@@ -26,17 +26,28 @@ if os.environ.get("ANTHROPIC_API_KEY"):
 if os.environ.get("GEMINI_API_KEY"):
     try:
         genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-        # Use the latest flash model name
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        print("✅ Gemini API initialized successfully")
+        # Try different model names until one works
+        model_names = [
+            'gemini-1.5-flash',
+            'gemini-1.5-pro',
+            'gemini-pro-vision',
+            'gemini-pro'
+        ]
+
+        for model_name in model_names:
+            try:
+                gemini_model = genai.GenerativeModel(model_name)
+                print(f"✅ Gemini API initialized successfully with model: {model_name}")
+                break
+            except Exception as e:
+                print(f"⚠️  Model {model_name} not available: {e}")
+                continue
+
+        if not gemini_model:
+            print("❌ No Gemini models available")
     except Exception as e:
-        print(f"⚠️  Failed to initialize Gemini API: {e}")
-        # Try fallback to pro model
-        try:
-            gemini_model = genai.GenerativeModel('gemini-1.5-pro-latest')
-            print("✅ Gemini API initialized successfully (using Pro model)")
-        except:
-            gemini_model = None
+        print(f"⚠️  Failed to configure Gemini API: {e}")
+        gemini_model = None
 
 HOOF_ANALYSIS_PROMPT = """You are an expert dairy cattle hoof trimmer. Analyze this hoof image based on the following criteria:
 
@@ -73,67 +84,73 @@ def analyze_with_claude(image_data):
     if not anthropic_client:
         raise Exception("Claude API key not configured")
 
-    message = anthropic_client.messages.create(
-        model="claude-sonnet-4-5-20250929",
-        max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/jpeg",
-                            "data": image_data,
+    try:
+        message = anthropic_client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=1024,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/jpeg",
+                                "data": image_data,
+                            },
                         },
-                    },
-                    {
-                        "type": "text",
-                        "text": HOOF_ANALYSIS_PROMPT
-                    }
-                ],
-            }
-        ],
-    )
+                        {
+                            "type": "text",
+                            "text": HOOF_ANALYSIS_PROMPT
+                        }
+                    ],
+                }
+            ],
+        )
 
-    analysis = message.content[0].text
-    status = "NEEDS TRIM" if "NEEDS TRIM" in analysis.upper() else "GOOD"
+        analysis = message.content[0].text
+        status = "NEEDS TRIM" if "NEEDS TRIM" in analysis.upper() else "GOOD"
 
-    return {
-        'provider': 'Claude Sonnet 4.5',
-        'status': status,
-        'analysis': analysis,
-        'success': True
-    }
+        return {
+            'provider': 'Claude Sonnet 4.5',
+            'status': status,
+            'analysis': analysis,
+            'success': True
+        }
+    except Exception as e:
+        raise Exception(f"Claude API error: {str(e)}")
 
 
 def analyze_with_gemini(image_data):
     """Analyze hoof image using Google Gemini API"""
     if not gemini_model:
-        raise Exception("Gemini API key not configured")
+        raise Exception("Gemini API key not configured or model not available")
 
-    # Decode base64 image
-    image_bytes = base64.b64decode(image_data)
+    try:
+        # Decode base64 image
+        image_bytes = base64.b64decode(image_data)
 
-    # Create the prompt with image
-    response = gemini_model.generate_content([
-        HOOF_ANALYSIS_PROMPT,
-        {
-            'mime_type': 'image/jpeg',
-            'data': image_bytes
+        # Create the prompt with image
+        response = gemini_model.generate_content([
+            HOOF_ANALYSIS_PROMPT,
+            {
+                'mime_type': 'image/jpeg',
+                'data': image_bytes
+            }
+        ])
+
+        analysis = response.text
+        status = "NEEDS TRIM" if "NEEDS TRIM" in analysis.upper() else "GOOD"
+
+        return {
+            'provider': 'Google Gemini',
+            'status': status,
+            'analysis': analysis,
+            'success': True
         }
-    ])
-
-    analysis = response.text
-    status = "NEEDS TRIM" if "NEEDS TRIM" in analysis.upper() else "GOOD"
-
-    return {
-        'provider': 'Google Gemini 1.5 Flash',
-        'status': status,
-        'analysis': analysis,
-        'success': True
-    }
+    except Exception as e:
+        raise Exception(f"Gemini API error: {str(e)}")
 
 
 @app.route('/health')
@@ -252,6 +269,10 @@ def analyze_hoof():
         return jsonify(result)
 
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"❌ Error in /analyze endpoint: {str(e)}")
+        print(f"Full traceback: {error_details}")
         return jsonify({
             'error': str(e),
             'success': False
