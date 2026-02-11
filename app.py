@@ -26,11 +26,17 @@ if os.environ.get("ANTHROPIC_API_KEY"):
 if os.environ.get("GEMINI_API_KEY"):
     try:
         genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        # Use the latest flash model name
+        gemini_model = genai.GenerativeModel('gemini-1.5-flash-latest')
         print("✅ Gemini API initialized successfully")
     except Exception as e:
         print(f"⚠️  Failed to initialize Gemini API: {e}")
-        gemini_model = None
+        # Try fallback to pro model
+        try:
+            gemini_model = genai.GenerativeModel('gemini-1.5-pro-latest')
+            print("✅ Gemini API initialized successfully (using Pro model)")
+        except:
+            gemini_model = None
 
 HOOF_ANALYSIS_PROMPT = """You are an expert dairy cattle hoof trimmer. Analyze this hoof image based on the following criteria:
 
