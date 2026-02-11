@@ -120,6 +120,16 @@ def analyze_with_gemini(image_data):
     }
 
 
+@app.route('/health')
+def health():
+    """Health check endpoint for Railway"""
+    return jsonify({
+        'status': 'healthy',
+        'claude_configured': anthropic_client is not None,
+        'gemini_configured': gemini_model is not None
+    })
+
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
