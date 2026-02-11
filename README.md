@@ -5,10 +5,13 @@ AI-powered web application for analyzing dairy cow hoof health and determining i
 ## Features
 
 - 📸 Upload images or capture from camera
-- 🤖 AI-powered analysis using Claude Vision
+- 🤖 **Multiple AI providers**: Choose between Google Gemini (FREE) or Claude
+- 🔄 **Compare mode**: Run both AIs side-by-side and compare results
 - 📊 Assessment based on professional hoof trimming standards
 - ✅ Clear recommendations (GOOD vs NEEDS TRIM)
 - 💡 Detailed analysis of angle, toe length, and weight distribution
+- 📱 Mobile-friendly with camera capture
+- ☁️ Cloud-ready for deployment
 
 ## Analysis Criteria
 
@@ -23,7 +26,10 @@ The app evaluates hooves based on:
 ### 1. Prerequisites
 
 - Python 3.8 or higher
-- Anthropic API key ([get one here](https://console.anthropic.com/))
+- At least one API key:
+  - **Google Gemini API** (Recommended - FREE!) - [Get it here](https://aistudio.google.com/app/apikey)
+  - **Anthropic Claude API** (Optional - Paid) - [Get it here](https://console.anthropic.com/)
+  - See [API_KEYS.md](API_KEYS.md) for detailed instructions
 
 ### 2. Installation
 
@@ -39,20 +45,33 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Configure API Key
+### 3. Configure API Keys
 
 ```bash
 # Copy the example env file
 cp .env.example .env
 
-# Edit .env and add your Anthropic API key
-# ANTHROPIC_API_KEY=sk-ant-api03-...
+# Edit .env and add your API key(s)
+# You only need one, but can add both!
 ```
 
-Or set it directly in your terminal:
+**Option A - Gemini only (FREE):**
 ```bash
-export ANTHROPIC_API_KEY='your-api-key-here'
+export GEMINI_API_KEY='your-gemini-key-here'
 ```
+
+**Option B - Claude only (Paid):**
+```bash
+export ANTHROPIC_API_KEY='your-claude-key-here'
+```
+
+**Option C - Both (for comparison):**
+```bash
+export GEMINI_API_KEY='your-gemini-key-here'
+export ANTHROPIC_API_KEY='your-claude-key-here'
+```
+
+See [API_KEYS.md](API_KEYS.md) for detailed setup instructions.
 
 ### 4. Run the Application
 
@@ -71,10 +90,20 @@ The app will start on `http://localhost:5000`
 
 ## Cost Estimate
 
-Based on Claude Vision API pricing:
-- ~$0.01-0.05 per image analysis
+### Google Gemini (Recommended)
+- ✅ **FREE**: 15 requests/minute, 1M tokens/day
+- Perfect for personal use and testing
+- No credit card required
+
+### Claude (Optional)
+- 💰 ~$0.01-0.05 per image analysis
 - 100 images/month: ~$5/month
 - 1,000 images/month: ~$30/month
+- $5 free credits on signup
+
+### Compare Mode
+- Uses both APIs (free + paid)
+- Great for validating results
 
 ## Project Structure
 
