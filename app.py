@@ -15,12 +15,22 @@ gemini_model = None
 
 # Try to initialize Anthropic
 if os.environ.get("ANTHROPIC_API_KEY"):
-    anthropic_client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    try:
+        anthropic_client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        print("✅ Claude API initialized successfully")
+    except Exception as e:
+        print(f"⚠️  Failed to initialize Claude API: {e}")
+        anthropic_client = None
 
 # Try to initialize Gemini
 if os.environ.get("GEMINI_API_KEY"):
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-    gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+    try:
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        print("✅ Gemini API initialized successfully")
+    except Exception as e:
+        print(f"⚠️  Failed to initialize Gemini API: {e}")
+        gemini_model = None
 
 HOOF_ANALYSIS_PROMPT = """You are an expert dairy cattle hoof trimmer. Analyze this hoof image based on the following criteria:
 
